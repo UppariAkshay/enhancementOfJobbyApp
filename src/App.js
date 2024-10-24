@@ -12,12 +12,12 @@ import NotFound from './notFound'
 
 // Replace your code here
 const App = () => (
-  <div className='appContainer'>
+  <div className="appContainer">
     <Switch>
-      <Route path='/login' component={Login} />
-      <ProtectedRoute exact path='/' component={Home} />
-      <ProtectedRoute exact path='/jobs' component={Jobs} />
-      <ProtectedRoute exact path='/jobs/:id' component={JobItemDetails} />
+      <Route path="/login" component={Login} />
+      <ProtectedRoute exact path="/" component={Home} />
+      <ProtectedRoute exact path="/jobs" component={Jobs} />
+      <ProtectedRoute exact path="/jobs/:id" component={JobItemDetails} />
       <Route component={NotFound} />
     </Switch>
   </div>

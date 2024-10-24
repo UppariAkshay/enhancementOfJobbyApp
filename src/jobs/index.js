@@ -52,7 +52,9 @@ class Jobs extends Component {
     employmentFilterList: [],
     salaryFilter: '',
     jobsFetchStatus: 'INITIAL',
+    profileDetails: [],
     profileStatus: true,
+    locationFilter: [],
   }
 
   componentDidMount() {
@@ -70,11 +72,11 @@ class Jobs extends Component {
       headers: {
         authorization: `Bearer ${jwtToken}`,
       },
+      method: 'GET',
     }
     const {searchText, employmentFilterList, salaryFilter} = this.state
-    const employmentFilterString = employmentFilterList.join(',')
-    console.log(employmentFilterString)
-    const url = `https://apis.ccbp.in/jobs?employment_type=${employmentFilterString}&search=${searchText}&minimum_package=${salaryFilter}`
+    // const employmentFilterString = employmentFilterList.join(',')
+    const url = `https://apis.ccbp.in/jobs?employment_type=${employmentFilterList.join()}&search=${searchText}&minimum_package=${salaryFilter}`
 
     console.log(url)
     const response = await fetch(url, options)
@@ -94,7 +96,14 @@ class Jobs extends Component {
         title: eachJob.title,
       }))
 
-      this.setState({jobsList: updatedData, jobsFetchStatus: 'SUCCESS'})
+      if (jobs.length === 0) {
+        this.setState({jobsList: [], jobsFetchStatus: 'NO JOBS FOUND'})
+      } else {
+        this.setState({
+          jobsList: updatedData,
+          jobsFetchStatus: 'SUCCESS',
+        })
+      }
     } else {
       this.setState({
         jobsFetchStatus: 'FAILURE',
@@ -170,41 +179,39 @@ class Jobs extends Component {
     const {employmentFilterList} = this.state
 
     const employmentId = event.target.id
+    const empTypeAlreadyThere = employmentFilterList.includes(employmentId)
 
-    if (employmentFilterList.includes(employmentId)) {
-      const updatedList = employmentFilterList.filter(
-        eachItem => eachItem !== employmentId,
-      )
-      this.setState(
-        {
-          employmentFilterList: updatedList,
-        },
-        this.getJobs,
-      )
+    if (empTypeAlreadyThere) {
+      this.setState(prevState => ({
+        employmentFilterList: [
+          ...prevState.employmentFilterList.filter(
+            eachType => eachType !== employmentId,
+          ),
+        ],
+      }))
     } else {
-      const updatedList = [...employmentFilterList, employmentId]
-      console.log(updatedList)
       this.setState(
-        {
-          employmentFilterList: updatedList,
-        },
+        prevState => ({
+          employmentFilterList: [
+            ...prevState.employmentFilterList,
+            employmentId,
+          ],
+        }),
         this.getJobs,
       )
     }
   }
 
-  onChangeSalary = event => {
+  onClickSalary = event => {
+    const {jobsList, filteredJobsList} = this.state
+
     const salaryId = event.target.id
-    this.setState(
-      {
-        salaryFilter: salaryId,
-      },
-      this.getJobs,
-    )
+
+    this.setState({salaryFilter: salaryId}, this.getJobs)
   }
 
   renderSuccessView = () => {
-    const {jobsList, profileStatus} = this.state
+    const {jobsList, profileStatus, filteredJobsList} = this.state
 
     return (
       <>
@@ -216,13 +223,13 @@ class Jobs extends Component {
                 ? this.renderProfileDetails()
                 : this.renderProfileFailureView()}
               <hr />
-
               <h1 className="filterHeading">Type of Employment</h1>
+              console.log(employmentTypesList)
               <ul>
                 {employmentTypesList.map(eachItem => (
                   <li key={eachItem.label} className="filterItem">
                     <input
-                      onChange={this.onClickEmploymentFilter}
+                      onClick={this.onClickEmploymentFilter}
                       id={eachItem.employmentTypeId}
                       type="checkbox"
                     />
@@ -235,15 +242,13 @@ class Jobs extends Component {
                   </li>
                 ))}
               </ul>
-
               <hr />
-
               <h1 className="filterHeading">Salary Range</h1>
               <ul>
                 {salaryRangesList.map(eachItem => (
                   <li key={eachItem.label} className="filterItem">
                     <input
-                      onChange={this.onChangeSalary}
+                      onClick={this.onClickSalary}
                       type="radio"
                       name="salaryFilter"
                       id={eachItem.salaryRangeId}
@@ -254,6 +259,49 @@ class Jobs extends Component {
                   </li>
                 ))}
               </ul>
+              <h1 className="filterHeading">Location</h1>
+              <ul>
+                <li className="filterItem">
+                  <input
+                    onClick={this.onClickLocationFilter}
+                    type="checkbox"
+                    id="Hyderabad"
+                  />
+                  <label htmlFor="Hyderabad">Hyderabad</label>
+                </li>
+                <li className="filterItem">
+                  <input
+                    onClick={this.onClickLocationFilter}
+                    type="checkbox"
+                    id="Bangalore"
+                  />
+                  <label htmlFor="Bangalore">Bangalore</label>
+                </li>
+                <li className="filterItem">
+                  <input
+                    onClick={this.onClickLocationFilter}
+                    type="checkbox"
+                    id="Chennai"
+                  />
+                  <label htmlFor="Chennai">Chennai</label>
+                </li>
+                <li className="filterItem">
+                  <input
+                    onClick={this.onClickLocationFilter}
+                    type="checkbox"
+                    id="Delhi"
+                  />
+                  <label htmlFor="Delhi">Delhi</label>
+                </li>
+                <li className="filterItem">
+                  <input
+                    onClick={this.onClickLocationFilter}
+                    type="checkbox"
+                    id="Mumbai"
+                  />
+                  <label htmlFor="Mumbai">Mumbai</label>
+                </li>
+              </ul>
             </div>
             <div className="jobs">
               <div className="searchJobsBar">
@@ -263,11 +311,12 @@ class Jobs extends Component {
                   className="searchJobs"
                   type="search"
                 />
-                <button data-testid="searchButton" type="button">
-                  <BsSearch
-                    onClick={this.onSearchJobs}
-                    className="searchIcon"
-                  />
+                <button
+                  onClick={this.onSearchJobs}
+                  data-testid="searchButton"
+                  type="button"
+                >
+                  <BsSearch className="searchIcon" />
                 </button>
               </div>
               <ul className="jobsItemsContainer">
@@ -289,7 +338,7 @@ class Jobs extends Component {
         alt="failure view"
       />
       <h1 className="failureHeading">Oops! Something Went Wrong</h1>
-      <p>We cannot seem the page you are looking for.</p>
+      <p>We cannot seem to find the page you are looking for</p>
       <button onClick={this.getJobs} className="retryButton" type="button">
         Retry
       </button>
@@ -328,6 +377,57 @@ class Jobs extends Component {
     }
   }
 
+  onClickLocationFilter = event => {
+    const {jobsList} = this.state
+
+    console.log(event.target.id)
+
+    if (event.target.checked) {
+      this.setState(prevState => ({
+        jobsList: [
+          ...prevState.jobsList.filter(
+            eachJob =>
+              eachJob.location.toLowerCase() === event.target.id.toLowerCase(),
+          ),
+        ],
+      }))
+    } else {
+      this.setState(prevState => ({
+        jobsList: [
+          ...prevState.jobsList.filter(
+            eachJob =>
+              eachJob.location.toLowerCase() !== event.target.id.toLowerCase(),
+          ),
+        ],
+      }))
+    }
+  }
+
+  // displayFilteredJobs = () => {
+  //   const {filteredJobsList} = this.state
+
+  //   return filteredJobsList.map(eachJob => (
+  //     <JobItem key={eachJob.id} jobDetails={eachJob} />
+  //   ))
+  // }
+
+  // displayAllJobs = () => {
+  //   const {jobsList} = this.state
+
+  //   return
+  // }
+
+  renderNoJobsFound = () => (
+    <div>
+      <h1>No Jobs Found</h1>
+      <img
+        src="https://assets.ccbp.in/frontend/react-js/no-jobs-img.png"
+        alt="no jobs"
+      />
+      <p>We could not find any jobs. Try other filters</p>
+    </div>
+  )
+
   render() {
     const {jobsFetchStatus} = this.state
 
@@ -338,6 +438,8 @@ class Jobs extends Component {
         return this.renderSuccessView()
       case 'FAILURE':
         return this.renderFailureView()
+      case 'NO JOBS FOUND':
+        return this.renderNoJobsFound()
       default:
         return null
     }

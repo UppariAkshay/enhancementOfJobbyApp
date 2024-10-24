@@ -1,5 +1,6 @@
 import {Component} from 'react'
 import Cookies from 'js-cookie'
+import {Redirect} from 'react-router-dom'
 import './index.css'
 
 class Login extends Component {
@@ -49,9 +50,13 @@ class Login extends Component {
     const {errorMsg} = this.state
     console.log(errorMsg)
 
+    if (Cookies.get('jwt_token') !== undefined) {
+      return <Redirect to="/" />
+    }
+
     return (
       <div className="loginContainer">
-        <form onSubmit={this.onLogin} className="loginCard">
+        <form className="loginCard">
           <img
             className="logo"
             src="https://assets.ccbp.in/frontend/react-js/logo-img.png"
@@ -77,7 +82,7 @@ class Login extends Component {
               id="password"
             />
           </div>
-          <button className="loginButton" type="submit">
+          <button onClick={this.onLogin} className="loginButton">
             Login
           </button>
           <p className="errorMsg">{errorMsg}</p>
